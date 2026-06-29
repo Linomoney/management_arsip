@@ -1,0 +1,235 @@
+{% extends "dokumen/base.html" %}
+{% block title %}Cari Dokumen — ArsipKu{% endblock %}
+{% block breadcrumb %}Cari Dokumen{% endblock %}
+{% block nav_cari %}active{% endblock %}
+
+{% block content %}
+
+<div style="max-width: 680px;">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <h1><i class="bi bi-search" style="color: var(--c-accent); margin-right: 10px;"></i>Cari Dokumen</h1>
+        <p>Pencarian menggunakan algoritma <strong style="color: var(--c-accent-2);">Binary Search Tree</strong> — bukan linear scan biasa.</p>
+    </div>
+
+    <!-- HOW BST SEARCH WORKS -->
+    <div class="card-dark" style="margin-bottom: 24px; border-color: rgba(108,99,255,0.25);">
+        <div class="section-title" style="margin-bottom: 14px;">
+            <i class="bi bi-lightbulb" style="color: var(--c-warning);"></i>
+            Cara Kerja Pencarian BST
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px;">
+            <div style="display: flex; gap: 10px; align-items: flex-start;">
+                <div style="width: 28px; height: 28px; background: rgba(108,99,255,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--c-accent-2); font-size: 0.8rem; font-weight: 700; flex-shrink: 0; margin-top: 2px;">1</div>
+                <div>
+                    <div style="font-size: 0.82rem; font-weight: 600; color: var(--c-text); margin-bottom: 2px;">Mulai dari Root</div>
+                    <div style="font-size: 0.75rem; color: var(--c-text-muted); line-height: 1.6;">Pencarian dimulai dari node paling atas (root) dari tree.</div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: flex-start;">
+                <div style="width: 28px; height: 28px; background: rgba(56,189,248,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--c-info); font-size: 0.8rem; font-weight: 700; flex-shrink: 0; margin-top: 2px;">2</div>
+                <div>
+                    <div style="font-size: 0.82rem; font-weight: 600; color: var(--c-text); margin-bottom: 2px;">Bandingkan Kode</div>
+                    <div style="font-size: 0.75rem; color: var(--c-text-muted); line-height: 1.6;">Kode dicari dibandingkan dengan node aktif. Sama = ketemu!</div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: flex-start;">
+                <div style="width: 28px; height: 28px; background: rgba(16,185,129,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--c-success); font-size: 0.8rem; font-weight: 700; flex-shrink: 0; margin-top: 2px;">3</div>
+                <div>
+                    <div style="font-size: 0.82rem; font-weight: 600; color: var(--c-text); margin-bottom: 2px;">Belok Kiri / Kanan</div>
+                    <div style="font-size: 0.75rem; color: var(--c-text-muted); line-height: 1.6;">Lebih kecil → kiri. Lebih besar → kanan. Setengah data tereliminasi!</div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: flex-start;">
+                <div style="width: 28px; height: 28px; background: rgba(245,158,11,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--c-warning); font-size: 0.8rem; font-weight: 700; flex-shrink: 0; margin-top: 2px;">✓</div>
+                <div>
+                    <div style="font-size: 0.82rem; font-weight: 600; color: var(--c-text); margin-bottom: 2px;">O(log n) Rata-rata</div>
+                    <div style="font-size: 0.75rem; color: var(--c-text-muted); line-height: 1.6;">Dari 1000 dokumen, hanya ~10 langkah untuk menemukannya!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEARCH FORM -->
+    <div class="card-dark" style="margin-bottom: 24px;">
+        <div class="section-title" style="margin-bottom: 16px;">
+            <i class="bi bi-search"></i>
+            Masukkan Kode Dokumen
+        </div>
+
+        <form method="post" id="searchForm">
+            {% csrf_token %}
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
+                    {{ form.kode }}
+                </div>
+                <button type="submit" class="btn-primary-custom" id="searchBtn">
+                    <i class="bi bi-search"></i> Cari Sekarang
+                </button>
+            </div>
+            <div class="form-hint" style="margin-top: 10px;">
+                <i class="bi bi-info-circle" style="margin-right: 4px; color: var(--c-accent);"></i>
+                Masukkan kode dokumen lengkap. Contoh: <span class="mono" style="color: var(--c-accent-2);">DOC-001</span>
+            </div>
+        </form>
+    </div>
+
+    <!-- SEARCH RESULT -->
+    {% if kode_dicari %}
+
+        {% if hasil %}
+        <!-- FOUND -->
+        <div style="animation: fadeIn 0.4s ease;">
+            <!-- SUCCESS BANNER -->
+            <div style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: var(--radius); padding: 18px 22px; margin-bottom: 20px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 44px; height: 44px; background: rgba(16,185,129,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.3rem; color: var(--c-success);">
+                    <i class="bi bi-check-lg"></i>
+                </div>
+                <div>
+                    <div style="font-weight: 600; color: #6ee7b7; font-size: 0.95rem;">Dokumen ditemukan!</div>
+                    <div style="font-size: 0.82rem; color: var(--c-text-muted); margin-top: 2px;">
+                        BST menemukan dokumen dalam
+                        <span class="mono" style="color: var(--c-success);">{{ langkah }} langkah</span>
+                        — dibanding Linear Search yang bisa membutuhkan hingga
+                        <span class="mono" style="color: var(--c-warning);">N langkah</span>.
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP VISUALIZER -->
+            {% if langkah %}
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 20px; flex-wrap: wrap;">
+                <span style="font-size: 0.75rem; color: var(--c-text-dim); margin-right: 4px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;">Langkah:</span>
+                {% for i in "x"|ljust:langkah %}
+                <div style="width: 28px; height: 28px; background: {% if forloop.last %}rgba(16,185,129,0.25){% else %}rgba(108,99,255,0.15){% endif %}; border: 1px solid {% if forloop.last %}rgba(16,185,129,0.4){% else %}rgba(108,99,255,0.3){% endif %}; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; font-family: var(--font-mono); color: {% if forloop.last %}var(--c-success){% else %}var(--c-accent-2){% endif %};">
+                    {{ forloop.counter }}
+                </div>
+                {% endfor %}
+                <i class="bi bi-check-circle-fill" style="color: var(--c-success); font-size: 1.1rem; margin-left: 4px;"></i>
+            </div>
+            {% endif %}
+
+            <!-- DOCUMENT DETAIL -->
+            <div class="card-dark">
+                <div class="section-title" style="margin-bottom: 18px;">
+                    <i class="bi bi-file-earmark-text"></i>
+                    Detail Dokumen
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                    <div style="background: var(--c-surface-2); border: 1px solid var(--c-border); border-radius: 8px; padding: 14px;">
+                        <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--c-text-dim); font-weight: 600; margin-bottom: 6px;">Kode Dokumen</div>
+                        <div class="badge-code" style="font-size: 0.95rem;">{{ hasil.kode }}</div>
+                    </div>
+                    <div style="background: var(--c-surface-2); border: 1px solid var(--c-border); border-radius: 8px; padding: 14px;">
+                        <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--c-text-dim); font-weight: 600; margin-bottom: 6px;">Kategori</div>
+                        <span class="badge-cat {% if hasil.kategori == 'Surat' %}surat{% elif hasil.kategori == 'Laporan' %}laporan{% elif hasil.kategori == 'Kontrak' %}kontrak{% elif hasil.kategori == 'Sertifikat' %}sertifikat{% else %}lainnya{% endif %}" style="font-size: 0.85rem; padding: 4px 12px;">
+                            {{ hasil.kategori }}
+                        </span>
+                    </div>
+                </div>
+
+                <div style="background: var(--c-surface-2); border: 1px solid var(--c-border); border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                    <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--c-text-dim); font-weight: 600; margin-bottom: 6px;">Nama Dokumen</div>
+                    <div style="font-size: 1rem; font-weight: 600; color: var(--c-text);">{{ hasil.nama }}</div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                    <div style="background: var(--c-surface-2); border: 1px solid var(--c-border); border-radius: 8px; padding: 14px;">
+                        <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--c-text-dim); font-weight: 600; margin-bottom: 6px;">Tanggal Upload</div>
+                        <div class="mono" style="color: var(--c-text); font-size: 0.9rem;">{{ hasil.tanggal }}</div>
+                    </div>
+                    <div style="background: var(--c-surface-2); border: 1px solid var(--c-border); border-radius: 8px; padding: 14px;">
+                        <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--c-text-dim); font-weight: 600; margin-bottom: 6px;">File Terlampir</div>
+                        {% if hasil.file_url %}
+                        <a href="{{ hasil.file_url }}" target="_blank" class="btn-ghost" style="font-size: 0.82rem; padding: 6px 12px;">
+                            <i class="bi bi-download"></i> Unduh File
+                        </a>
+                        {% else %}
+                        <span style="color: var(--c-text-dim); font-size: 0.85rem;">Tidak ada file</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <hr class="divider" style="margin: 16px 0;">
+
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <a href="{% url 'dokumen:edit' hasil.id %}" class="btn-edit" style="font-size: 0.875rem; padding: 10px 18px;">
+                        <i class="bi bi-pencil"></i> Edit Dokumen Ini
+                    </a>
+                    <a href="{% url 'dokumen:hapus' hasil.id %}" class="btn-danger-custom" style="font-size: 0.875rem; padding: 10px 18px;">
+                        <i class="bi bi-trash3"></i> Hapus Dokumen
+                    </a>
+                    <a href="{% url 'dokumen:cari' %}" class="btn-ghost" style="margin-left: auto;">
+                        <i class="bi bi-search"></i> Cari Lain
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- NOT FOUND -->
+        <div style="animation: fadeIn 0.4s ease;">
+            <div style="background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); border-radius: var(--radius); padding: 24px; text-align: center;">
+                <div style="width: 60px; height: 60px; background: rgba(239,68,68,0.12); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; font-size: 1.6rem; color: var(--c-danger);">
+                    <i class="bi bi-x-lg"></i>
+                </div>
+                <h3 style="font-size: 1rem; font-weight: 600; color: #fca5a5; margin: 0 0 8px;">Dokumen Tidak Ditemukan</h3>
+                <p style="font-size: 0.85rem; color: var(--c-text-muted); margin: 0 0 6px;">
+                    Kode <span class="mono" style="color: var(--c-danger);">{{ kode_dicari }}</span> tidak ada dalam arsip BST.
+                </p>
+                <p style="font-size: 0.82rem; color: var(--c-text-dim); margin: 0 0 18px;">
+                    BST memeriksa dalam <span class="mono" style="color: var(--c-warning);">{{ langkah }} langkah</span> dan memastikan dokumen tidak ada.
+                </p>
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <a href="{% url 'dokumen:tambah' %}" class="btn-primary-custom">
+                        <i class="bi bi-plus-lg"></i> Tambah Dokumen Baru
+                    </a>
+                    <a href="{% url 'dokumen:cari' %}" class="btn-ghost">
+                        <i class="bi bi-search"></i> Coba Kode Lain
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    {% else %}
+    <!-- IDLE STATE — tips -->
+    <div class="card-dark" style="text-align: center; padding: 40px 28px; border: 1px dashed var(--c-border); background: transparent;">
+        <i class="bi bi-search" style="font-size: 2.5rem; color: var(--c-text-dim); display: block; margin-bottom: 16px;"></i>
+        <h3 style="font-size: 0.95rem; font-weight: 600; color: var(--c-text); margin: 0 0 8px;">Siap Mencari</h3>
+        <p style="font-size: 0.82rem; color: var(--c-text-muted); max-width: 300px; margin: 0 auto 20px; line-height: 1.7;">
+            Masukkan kode dokumen di atas. Sistem akan menelusuri BST dan menampilkan berapa banyak langkah yang dibutuhkan.
+        </p>
+        <a href="{% url 'dokumen:index' %}" class="btn-ghost">
+            <i class="bi bi-list-ul"></i> Lihat Semua Dokumen
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Add focus styling
+    const input = document.querySelector('input[name="kode"]');
+    if (input) {
+        input.placeholder = 'Contoh: DOC-001';
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('searchBtn').innerHTML = '<i class="bi bi-hourglass-split"></i> Mencari...';
+            }
+        });
+    }
+
+    document.getElementById('searchForm').addEventListener('submit', function() {
+        const btn = document.getElementById('searchBtn');
+        if (btn) {
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Mencari...';
+            btn.disabled = true;
+        }
+    });
+</script>
+{% endblock %}

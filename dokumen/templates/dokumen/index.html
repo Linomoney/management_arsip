@@ -1,0 +1,558 @@
+{% extends "dokumen/base.html" %}
+{% block title %}Beranda — ArsipKu{% endblock %}
+{% block breadcrumb %}Beranda{% endblock %}
+{% block nav_beranda %}active{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Mini BST canvas card */
+.bst-canvas-card {
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color var(--transition);
+}
+.bst-canvas-card:hover { border-color: rgba(108,99,255,0.4); }
+
+/* Category chart */
+.cat-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.cat-bar-label {
+    font-size: 0.78rem;
+    color: var(--c-text-muted);
+    width: 80px;
+    flex-shrink: 0;
+}
+.cat-bar-track {
+    flex: 1;
+    height: 8px;
+    background: var(--c-surface-2);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.cat-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s cubic-bezier(.4,0,.2,1);
+    width: 0%;
+}
+.cat-bar-count {
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    color: var(--c-text-dim);
+    width: 24px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+/* Feature cards at bottom */
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+    margin-top: 24px;
+}
+.feature-card {
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    padding: 20px;
+    transition: all var(--transition);
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+.feature-card:hover {
+    border-color: var(--c-accent);
+    transform: translateY(-2px);
+    color: inherit;
+}
+.feature-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    margin-bottom: 12px;
+}
+.feature-card h4 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin: 0 0 6px;
+    color: var(--c-text);
+}
+.feature-card p {
+    font-size: 0.78rem;
+    color: var(--c-text-muted);
+    margin: 0;
+    line-height: 1.6;
+}
+.feature-card .arrow {
+    margin-top: 12px;
+    font-size: 0.75rem;
+    color: var(--c-text-dim);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color var(--transition), gap var(--transition);
+}
+.feature-card:hover .arrow {
+    color: var(--c-accent-2);
+    gap: 8px;
+}
+
+/* How BST works inline illustration */
+.bst-how-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--c-border);
+}
+.bst-how-step:last-child { border-bottom: none; }
+.bst-step-num {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    flex-shrink: 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+    <h1><i class="bi bi-archive" style="color: var(--c-accent); margin-right: 10px;"></i>Dashboard Arsip Digital</h1>
+    <p>Semua dokumen dikelola menggunakan struktur data <strong style="color: var(--c-accent-2);">Binary Search Tree (BST)</strong> — terurut otomatis, pencarian efisien O(log n).</p>
+</div>
+
+<!-- STAT CARDS -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px;">
+
+    <div class="stat-card">
+        <div class="stat-icon purple"><i class="bi bi-files"></i></div>
+        <div class="stat-info">
+            <label>Total Dokumen</label>
+            <div class="stat-number" id="statDok">{{ jumlah_dokumen }}</div>
+            <div class="stat-sub">tersimpan di BST</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon green"><i class="bi bi-diagram-3"></i></div>
+        <div class="stat-info">
+            <label>Tinggi BST</label>
+            <div class="stat-number">{{ tinggi_tree }}</div>
+            <div class="stat-sub">level kedalaman tree</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon blue"><i class="bi bi-lightning-charge"></i></div>
+        <div class="stat-info">
+            <label>Kompleksitas Cari</label>
+            <div class="stat-number" style="font-size: 1.3rem;">O(log n)</div>
+            <div class="stat-sub">rata-rata BST search</div>
+        </div>
+    </div>
+
+    <div class="stat-card" style="cursor:pointer;" onclick="window.location='{% url 'dokumen:tambah' %}'">
+        <div class="stat-icon yellow"><i class="bi bi-plus-circle"></i></div>
+        <div class="stat-info">
+            <label>Aksi Cepat</label>
+            <div class="stat-number" style="font-size: 1rem; color: var(--c-warning);">Tambah Dokumen</div>
+            <div class="stat-sub">klik untuk menambahkan <i class="bi bi-arrow-right" style="font-size: 0.75rem;"></i></div>
+        </div>
+    </div>
+</div>
+
+{% if not daftar_dokumen %}
+<!-- EMPTY + HOW IT WORKS -->
+<div class="info-box" style="margin-bottom: 24px;">
+    <i class="bi bi-lightbulb" style="color: var(--c-warning); margin-right: 6px;"></i>
+    <strong>Cara Kerja Sistem Ini:</strong> Setiap dokumen yang ditambahkan akan disisipkan ke dalam struktur <strong>Binary Search Tree</strong>
+    menggunakan <em>kode dokumen</em> sebagai kunci pengurutan. Kode lebih kecil masuk ke subtree kiri,
+    lebih besar ke kanan. Hasil traversal In-Order selalu terurut. Mulai dengan menambahkan dokumen pertama!
+</div>
+
+<div style="text-align: center; padding: 40px 0;">
+    <a href="{% url 'dokumen:tambah' %}" class="btn-primary-custom" style="padding: 14px 28px; font-size: 1rem;">
+        <i class="bi bi-plus-lg"></i> Tambah Dokumen Pertama
+    </a>
+</div>
+
+{% else %}
+
+<!-- MAIN GRID: table + sidebar -->
+<div style="display: grid; grid-template-columns: 1fr 280px; gap: 16px; align-items: start; margin-bottom: 24px;">
+
+    <!-- DOCUMENT TABLE -->
+    <div class="card-dark" style="padding: 0; overflow: hidden;">
+        <div class="section-header" style="padding: 16px 20px 0;">
+            <div class="section-title">
+                <i class="bi bi-table"></i>
+                Daftar Arsip Dokumen
+                <span class="bst-chip"><span class="dot"></span>In-Order — Terurut Kode</span>
+            </div>
+            <a href="{% url 'dokumen:tambah' %}" class="btn-primary-custom" style="padding: 8px 16px; font-size: 0.82rem;">
+                <i class="bi bi-plus-lg"></i> Tambah
+            </a>
+        </div>
+
+        <!-- FILTER -->
+        <div style="padding: 10px 20px; border-bottom: 1px solid var(--c-border);">
+            <input
+                type="text"
+                id="filterInput"
+                placeholder="Filter nama, kode, atau kategori..."
+                style="background: var(--c-surface-2); border: 1px solid var(--c-border); border-radius: 8px; color: var(--c-text); padding: 8px 12px; font-size: 0.82rem; width: 100%; outline: none; transition: border-color 0.2s;"
+                oninput="filterTable()"
+                onfocus="this.style.borderColor='var(--c-accent)'"
+                onblur="this.style.borderColor='var(--c-border)'"
+            >
+            <span id="filterCount" style="font-size: 0.75rem; color: var(--c-text-dim); margin-left: 8px;"></span>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table class="table-dark-custom" id="dokumenTable">
+                <thead>
+                    <tr>
+                        <th style="width: 36px;">#</th>
+                        <th>Kode</th>
+                        <th>Nama Dokumen</th>
+                        <th>Kategori</th>
+                        <th>Tanggal</th>
+                        <th>File</th>
+                        <th style="text-align: right;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="dokumenBody">
+                    {% for dok in daftar_dokumen %}
+                    <tr>
+                        <td style="color: var(--c-text-dim); font-family: var(--font-mono); font-size: 0.75rem;">{{ forloop.counter }}</td>
+                        <td><span class="badge-code">{{ dok.kode }}</span></td>
+                        <td style="font-weight: 500; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ dok.nama }}</td>
+                        <td>
+                            <span class="badge-cat {% if dok.kategori == 'Surat' %}surat{% elif dok.kategori == 'Laporan' %}laporan{% elif dok.kategori == 'Kontrak' %}kontrak{% elif dok.kategori == 'Sertifikat' %}sertifikat{% else %}lainnya{% endif %}">
+                                {{ dok.kategori }}
+                            </span>
+                        </td>
+                        <td style="color: var(--c-text-muted); font-size: 0.8rem; font-family: var(--font-mono);">{{ dok.tanggal }}</td>
+                        <td>
+                            {% if dok.file_url %}
+                            <a href="{{ dok.file_url }}" target="_blank" class="btn-ghost" style="font-size: 0.72rem; padding: 4px 8px;">
+                                <i class="bi bi-download"></i>
+                            </a>
+                            {% else %}
+                            <span style="color: var(--c-text-dim); font-size: 0.8rem;">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 4px; justify-content: flex-end;">
+                                <a href="{% url 'dokumen:edit' dok.id %}" class="btn-edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'dokumen:hapus' dok.id %}" class="btn-delete">
+                                    <i class="bi bi-trash3"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div style="padding: 10px 20px; border-top: 1px solid var(--c-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <span style="font-size: 0.75rem; color: var(--c-text-dim);">
+                <i class="bi bi-info-circle" style="margin-right: 4px; color: var(--c-accent);"></i>
+                Urutan = BST <span class="mono" style="color: var(--c-accent-2);">In-Order</span> Traversal
+            </span>
+            <div style="display: flex; gap: 8px;">
+                <a href="{% url 'dokumen:cari' %}" class="btn-ghost" style="font-size: 0.75rem; padding: 5px 10px;">
+                    <i class="bi bi-search"></i> Cari
+                </a>
+                <a href="{% url 'dokumen:traversal' 'inorder' %}" class="btn-ghost" style="font-size: 0.75rem; padding: 5px 10px;">
+                    <i class="bi bi-diagram-3"></i> Traversal
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIDEBAR WIDGETS -->
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+
+        <!-- BST MINI CANVAS -->
+        <div class="bst-canvas-card">
+            <div style="padding: 14px 16px 10px; border-bottom: 1px solid var(--c-border);">
+                <div class="section-title" style="font-size: 0.85rem;">
+                    <i class="bi bi-diagram-3" style="color: var(--c-success);"></i>
+                    Struktur BST
+                </div>
+            </div>
+            <div style="padding: 10px; background: var(--c-surface-2);">
+                <canvas id="bstMiniCanvas" style="display: block; width: 100%; border-radius: 6px;"></canvas>
+            </div>
+            <div style="padding: 8px 14px; font-size: 0.72rem; color: var(--c-text-dim);">
+                Visualisasi pohon BST — node diurutkan berdasarkan kode dokumen
+            </div>
+        </div>
+
+        <!-- CATEGORY CHART -->
+        <div class="card-dark" style="padding: 16px;">
+            <div class="section-title" style="font-size: 0.85rem; margin-bottom: 14px;">
+                <i class="bi bi-bar-chart" style="color: var(--c-warning);"></i>
+                Distribusi Kategori
+            </div>
+            <div id="catChart">
+                <!-- Rendered by JS -->
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- RESPONSIVE STACK on mobile -->
+<style>
+@media (max-width: 900px) {
+    .main-grid-two { grid-template-columns: 1fr !important; }
+}
+</style>
+
+<!-- FEATURE CARDS -->
+<div class="feature-grid">
+
+    <a href="{% url 'dokumen:cari' %}" class="feature-card">
+        <div class="feature-icon" style="background: rgba(108,99,255,0.12); color: var(--c-accent-2);">
+            <i class="bi bi-search"></i>
+        </div>
+        <h4>Pencarian BST</h4>
+        <p>Cari dokumen berdasarkan kode menggunakan algoritma BST Search. Hanya memeriksa sebagian tree di setiap langkah — O(log n).</p>
+        <div class="arrow"><i class="bi bi-arrow-right"></i> Cari Dokumen</div>
+    </a>
+
+    <a href="{% url 'dokumen:traversal' 'inorder' %}" class="feature-card">
+        <div class="feature-icon" style="background: rgba(16,185,129,0.12); color: var(--c-success);">
+            <i class="bi bi-sort-alpha-down"></i>
+        </div>
+        <h4>In-Order Traversal</h4>
+        <p>Kunjungi semua node dengan urutan Kiri → Root → Kanan. Hasilnya selalu terurut naik berdasarkan kode dokumen.</p>
+        <div class="arrow"><i class="bi bi-arrow-right"></i> Lihat In-Order</div>
+    </a>
+
+    <a href="{% url 'dokumen:traversal' 'preorder' %}" class="feature-card">
+        <div class="feature-icon" style="background: rgba(56,189,248,0.12); color: var(--c-info);">
+            <i class="bi bi-diagram-3"></i>
+        </div>
+        <h4>Pre-Order Traversal</h4>
+        <p>Kunjungi Root lebih dulu, baru Kiri kemudian Kanan. Berguna untuk mereproduksi/menyalin struktur BST.</p>
+        <div class="arrow"><i class="bi bi-arrow-right"></i> Lihat Pre-Order</div>
+    </a>
+
+    <a href="{% url 'dokumen:traversal' 'postorder' %}" class="feature-card">
+        <div class="feature-icon" style="background: rgba(245,158,11,0.12); color: var(--c-warning);">
+            <i class="bi bi-diagram-3-fill"></i>
+        </div>
+        <h4>Post-Order Traversal</h4>
+        <p>Kunjungi semua anak dulu, Root paling akhir. Digunakan saat penghapusan — agar anak terhapus sebelum induknya.</p>
+        <div class="arrow"><i class="bi bi-arrow-right"></i> Lihat Post-Order</div>
+    </a>
+
+    <a href="{% url 'dokumen:tambah' %}" class="feature-card">
+        <div class="feature-icon" style="background: rgba(108,99,255,0.12); color: var(--c-accent-2);">
+            <i class="bi bi-plus-circle"></i>
+        </div>
+        <h4>Tambah Dokumen</h4>
+        <p>Sisipkan dokumen baru ke BST. Kode dokumen menjadi kunci — lebih kecil ke kiri, lebih besar ke kanan secara rekursif.</p>
+        <div class="arrow"><i class="bi bi-arrow-right"></i> Tambah Sekarang</div>
+    </a>
+
+    <div class="feature-card" style="cursor: default;">
+        <div class="feature-icon" style="background: rgba(239,68,68,0.1); color: var(--c-danger);">
+            <i class="bi bi-shield-check"></i>
+        </div>
+        <h4>Validasi Kode Unik</h4>
+        <p>Sebelum menyimpan ke database, sistem memvalidasi duplikasi lewat BST. Kode yang sudah ada akan langsung ditolak.</p>
+        <div class="arrow" style="color: var(--c-text-dim); cursor: default;"><i class="bi bi-check-circle"></i> Otomatis Aktif</div>
+    </div>
+
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// ============================================================
+// TABLE FILTER
+// ============================================================
+function filterTable() {
+    const input = document.getElementById('filterInput');
+    if (!input) return;
+    const val = input.value.toLowerCase();
+    const rows = document.querySelectorAll('#dokumenBody tr');
+    let count = 0;
+    rows.forEach(function(row) {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(val)) { row.style.display = ''; count++; }
+        else row.style.display = 'none';
+    });
+    const countEl = document.getElementById('filterCount');
+    if (countEl) {
+        countEl.textContent = val ? (count + ' dari ' + rows.length + ' dokumen') : '';
+    }
+}
+
+// ============================================================
+// CATEGORY CHART
+// ============================================================
+const kategoriData = {{ kategori_count_json|safe }};
+const catColors = {
+    'Surat':      { bar: '#38bdf8', bg: 'rgba(56,189,248,0.15)' },
+    'Laporan':    { bar: '#a78bfa', bg: 'rgba(108,99,255,0.15)' },
+    'Kontrak':    { bar: '#f59e0b', bg: 'rgba(245,158,11,0.15)' },
+    'Sertifikat': { bar: '#10b981', bg: 'rgba(16,185,129,0.15)' },
+    'Lainnya':    { bar: '#94a3b8', bg: 'rgba(148,163,184,0.1)' },
+};
+
+function renderCatChart() {
+    const wrap = document.getElementById('catChart');
+    if (!wrap) return;
+    const total = Object.values(kategoriData).reduce((a, b) => a + b, 0) || 1;
+    let html = '';
+    for (const [kat, count] of Object.entries(kategoriData)) {
+        const pct = Math.round(count / total * 100);
+        const col = catColors[kat] || catColors['Lainnya'];
+        html += `
+        <div class="cat-bar-row">
+            <div class="cat-bar-label">${kat}</div>
+            <div class="cat-bar-track">
+                <div class="cat-bar-fill" data-pct="${pct}" style="background: ${col.bar};"></div>
+            </div>
+            <div class="cat-bar-count">${count}</div>
+        </div>`;
+    }
+    if (!html) html = '<p style="font-size:0.8rem;color:var(--c-text-dim);">Belum ada data</p>';
+    wrap.innerHTML = html;
+
+    // Animate bars
+    setTimeout(() => {
+        document.querySelectorAll('.cat-bar-fill').forEach(el => {
+            el.style.width = el.dataset.pct + '%';
+        });
+    }, 100);
+}
+
+// ============================================================
+// BST MINI CANVAS
+// ============================================================
+const treeData = {{ tree_json|safe }};
+
+function drawMiniTree() {
+    const canvas = document.getElementById('bstMiniCanvas');
+    if (!canvas || !treeData) return;
+
+    // Measure container
+    const containerW = canvas.parentElement.offsetWidth - 20;
+    if (containerW <= 0) return;
+
+    // Count nodes and get height
+    function countNodes(n) { return n ? 1 + countNodes(n.left) + countNodes(n.right) : 0; }
+    function getHeight(n) { return n ? 1 + Math.max(getHeight(n.left), getHeight(n.right)) : -1; }
+
+    const totalNodes = countNodes(treeData);
+    if (totalNodes === 0) return;
+
+    const treeH = getHeight(treeData);
+    const levels = treeH + 1;
+    const nodeR = Math.max(14, Math.min(22, containerW / (totalNodes * 2.2)));
+    const levelH = nodeR * 3.2;
+    const canvasW = containerW;
+    const canvasH = Math.max(80, levels * levelH + nodeR * 2 + 10);
+
+    canvas.width = canvasW;
+    canvas.height = canvasH;
+
+    function assignPos(node, depth, minX, maxX) {
+        if (!node) return;
+        node.px = (minX + maxX) / 2;
+        node.py = depth * levelH + nodeR + 5;
+        node.depth = depth;
+        node.isLeaf = !node.left && !node.right;
+        assignPos(node.left, depth + 1, minX, (minX + maxX) / 2);
+        assignPos(node.right, depth + 1, (minX + maxX) / 2, maxX);
+    }
+    assignPos(treeData, 0, 0, canvasW);
+
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvasW, canvasH);
+
+    function drawEdges(node) {
+        if (!node) return;
+        [node.left, node.right].forEach(child => {
+            if (!child) return;
+            ctx.beginPath();
+            ctx.moveTo(node.px, node.py);
+            ctx.lineTo(child.px, child.py);
+            ctx.strokeStyle = 'rgba(42,47,69,0.9)';
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+            drawEdges(child);
+        });
+    }
+    drawEdges(treeData);
+
+    function drawNodes(node) {
+        if (!node) return;
+        const depth = node.depth;
+        const maxD = Math.max(1, treeH);
+
+        let fill, stroke;
+        if (node.isLeaf) {
+            fill = 'rgba(16,185,129,0.18)'; stroke = 'rgba(16,185,129,0.55)';
+        } else if (depth === 0) {
+            fill = 'rgba(108,99,255,0.25)'; stroke = 'rgba(108,99,255,0.7)';
+        } else {
+            const t = depth / maxD;
+            fill = `rgba(56,189,248,${0.08 + 0.1*(1-t)})`;
+            stroke = `rgba(56,189,248,${0.3 + 0.2*(1-t)})`;
+        }
+
+        ctx.beginPath();
+        ctx.arc(node.px, node.py, nodeR, 0, Math.PI * 2);
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.fillStyle = node.isLeaf ? '#6ee7b7' : (depth === 0 ? '#a78bfa' : '#7dd3fc');
+        const fontSize = Math.max(8, Math.min(10, nodeR * 0.5));
+        ctx.font = `700 ${fontSize}px 'JetBrains Mono', monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        let label = node.kode;
+        if (label.length > 5) label = label.substring(0, 5) + '…';
+        ctx.fillText(label, node.px, node.py);
+
+        drawNodes(node.left);
+        drawNodes(node.right);
+    }
+    drawNodes(treeData);
+}
+
+window.addEventListener('load', function() {
+    renderCatChart();
+    drawMiniTree();
+});
+window.addEventListener('resize', drawMiniTree);
+</script>
+{% endblock %}

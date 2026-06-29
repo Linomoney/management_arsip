@@ -1,0 +1,237 @@
+{% extends "dokumen/base.html" %}
+{% block title %}{{ judul }} — ArsipKu{% endblock %}
+{% block breadcrumb %}{{ judul }}{% endblock %}
+{% block nav_tambah %}active{% endblock %}
+
+{% block content %}
+
+<div style="max-width: 720px;">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <h1>
+            {% if 'Edit' in judul %}
+                <i class="bi bi-pencil-square" style="color: var(--c-warning); margin-right: 10px;"></i>
+            {% else %}
+                <i class="bi bi-plus-circle" style="color: var(--c-accent); margin-right: 10px;"></i>
+            {% endif %}
+            {{ judul }}
+        </h1>
+        <p>
+            {% if 'Edit' in judul %}
+                Perbarui informasi dokumen yang ada dalam arsip BST.
+            {% else %}
+                Dokumen baru akan disisipkan ke dalam struktur Binary Search Tree berdasarkan kode dokumen.
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- INFO BOX BST INSERT -->
+    {% if 'Tambah' in judul %}
+    <div class="info-box" style="margin-bottom: 24px;">
+        <i class="bi bi-diagram-3" style="color: var(--c-accent); margin-right: 6px;"></i>
+        <strong>Bagaimana BST menyimpan dokumen baru?</strong><br>
+        <span style="font-size: 0.82rem; display: block; margin-top: 6px; line-height: 1.8;">
+            Saat Anda klik <em>Simpan</em>, sistem membandingkan kode dokumen baru dengan node-node yang ada di tree.
+            Jika kode baru <strong>lebih kecil</strong>, disisipkan ke kiri; jika <strong>lebih besar</strong>, ke kanan.
+            Proses ini berulang sampai menemukan posisi kosong. Kompleksitas rata-rata: <span class="mono" style="color: var(--c-success);">O(log n)</span>.
+        </span>
+    </div>
+    {% endif %}
+
+    <!-- FORM CARD -->
+    <div class="card-dark">
+        <form method="post" enctype="multipart/form-data" id="dokumenForm" novalidate>
+            {% csrf_token %}
+
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 20px;">
+                <!-- KODE DOKUMEN -->
+                <div>
+                    <label class="form-label-dark" for="{{ form.kode.id_for_label }}">
+                        <i class="bi bi-hash" style="color: var(--c-accent);"></i>
+                        Kode Dokumen
+                        <span style="color: var(--c-danger); margin-left: 2px;">*</span>
+                    </label>
+                    {{ form.kode }}
+                    <div class="form-hint">
+                        Kode unik sebagai kunci BST. Contoh: <span class="mono" style="color: var(--c-accent-2);">DOC-001</span>
+                    </div>
+                    {% if form.kode.errors %}
+                    <div class="form-error">
+                        <i class="bi bi-exclamation-circle"></i>
+                        {{ form.kode.errors.as_text }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- NAMA DOKUMEN -->
+                <div>
+                    <label class="form-label-dark" for="{{ form.nama.id_for_label }}">
+                        <i class="bi bi-file-text" style="color: var(--c-accent);"></i>
+                        Nama Dokumen
+                        <span style="color: var(--c-danger); margin-left: 2px;">*</span>
+                    </label>
+                    {{ form.nama }}
+                    <div class="form-hint">Nama lengkap dokumen yang akan diarsipkan.</div>
+                    {% if form.nama.errors %}
+                    <div class="form-error">
+                        <i class="bi bi-exclamation-circle"></i>
+                        {{ form.nama.errors.as_text }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <hr class="divider">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <!-- KATEGORI -->
+                <div>
+                    <label class="form-label-dark" for="{{ form.kategori.id_for_label }}">
+                        <i class="bi bi-tag" style="color: var(--c-accent);"></i>
+                        Kategori
+                    </label>
+                    {{ form.kategori }}
+                    <div class="form-hint">Pilih jenis dokumen yang sesuai.</div>
+                </div>
+
+                <!-- TANGGAL UPLOAD -->
+                <div>
+                    <label class="form-label-dark" for="{{ form.tanggal_upload.id_for_label }}">
+                        <i class="bi bi-calendar3" style="color: var(--c-accent);"></i>
+                        Tanggal Dokumen
+                        <span style="color: var(--c-danger); margin-left: 2px;">*</span>
+                    </label>
+                    {{ form.tanggal_upload }}
+                    <div class="form-hint">Tanggal pembuatan atau upload dokumen.</div>
+                    {% if form.tanggal_upload.errors %}
+                    <div class="form-error">
+                        <i class="bi bi-exclamation-circle"></i>
+                        {{ form.tanggal_upload.errors.as_text }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <hr class="divider">
+
+            <!-- FILE UPLOAD -->
+            <div style="margin-bottom: 28px;">
+                <label class="form-label-dark" for="{{ form.file.id_for_label }}">
+                    <i class="bi bi-paperclip" style="color: var(--c-accent);"></i>
+                    File Dokumen
+                    <span style="font-size: 0.72rem; font-weight: 400; color: var(--c-text-dim); margin-left: 6px;">(opsional)</span>
+                </label>
+
+                <!-- Custom file area -->
+                <div id="dropZone" style="
+                    border: 2px dashed var(--c-border);
+                    border-radius: var(--radius);
+                    padding: 28px;
+                    text-align: center;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    background: var(--c-surface-2);
+                    position: relative;
+                " onmouseover="this.style.borderColor='var(--c-accent)'"
+                   onmouseout="this.style.borderColor='var(--c-border)'"
+                   onclick="document.getElementById('{{ form.file.id_for_label }}').click()">
+                    <i class="bi bi-cloud-upload" style="font-size: 2rem; color: var(--c-text-dim); display: block; margin-bottom: 8px;"></i>
+                    <p style="margin: 0 0 4px; font-size: 0.875rem; color: var(--c-text-muted);">Klik untuk pilih file atau drag & drop</p>
+                    <p style="margin: 0; font-size: 0.75rem; color: var(--c-text-dim);">PDF, DOC, DOCX, XLS, XLSX, dan format lainnya</p>
+                    <div id="fileName" style="margin-top: 10px; font-size: 0.82rem; color: var(--c-accent-2); display: none;"></div>
+                </div>
+                <!-- Hidden actual input -->
+                <div style="display: none;">{{ form.file }}</div>
+            </div>
+
+            <!-- ACTION BUTTONS -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <a href="{% url 'dokumen:index' %}" class="btn-ghost">
+                    <i class="bi bi-arrow-left"></i> Kembali ke Beranda
+                </a>
+                <button type="submit" class="btn-primary-custom" id="submitBtn">
+                    <i class="bi bi-save"></i>
+                    {% if 'Edit' in judul %}Perbarui Dokumen{% else %}Simpan ke Arsip{% endif %}
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- CATEGORY GUIDE -->
+    <div class="card-dark" style="margin-top: 20px; padding: 20px;">
+        <div class="section-title" style="margin-bottom: 14px; font-size: 0.875rem;">
+            <i class="bi bi-grid-3x3-gap"></i> Panduan Kategori
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
+            <div style="text-align: center; padding: 12px; background: rgba(56,189,248,0.07); border: 1px solid rgba(56,189,248,0.2); border-radius: 8px;">
+                <i class="bi bi-envelope" style="color: var(--c-info); font-size: 1.3rem;"></i>
+                <div style="font-size: 0.78rem; font-weight: 600; color: var(--c-info); margin-top: 6px;">Surat</div>
+                <div style="font-size: 0.72rem; color: var(--c-text-dim); margin-top: 2px;">Surat dinas, undangan, memo</div>
+            </div>
+            <div style="text-align: center; padding: 12px; background: rgba(108,99,255,0.07); border: 1px solid rgba(108,99,255,0.2); border-radius: 8px;">
+                <i class="bi bi-bar-chart-line" style="color: var(--c-accent-2); font-size: 1.3rem;"></i>
+                <div style="font-size: 0.78rem; font-weight: 600; color: var(--c-accent-2); margin-top: 6px;">Laporan</div>
+                <div style="font-size: 0.72rem; color: var(--c-text-dim); margin-top: 2px;">Laporan bulanan, evaluasi</div>
+            </div>
+            <div style="text-align: center; padding: 12px; background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.2); border-radius: 8px;">
+                <i class="bi bi-file-earmark-text" style="color: var(--c-warning); font-size: 1.3rem;"></i>
+                <div style="font-size: 0.78rem; font-weight: 600; color: var(--c-warning); margin-top: 6px;">Kontrak</div>
+                <div style="font-size: 0.72rem; color: var(--c-text-dim); margin-top: 2px;">Perjanjian, MOU, kontrak</div>
+            </div>
+            <div style="text-align: center; padding: 12px; background: rgba(16,185,129,0.07); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px;">
+                <i class="bi bi-award" style="color: var(--c-success); font-size: 1.3rem;"></i>
+                <div style="font-size: 0.78rem; font-weight: 600; color: var(--c-success); margin-top: 6px;">Sertifikat</div>
+                <div style="font-size: 0.72rem; color: var(--c-text-dim); margin-top: 2px;">Ijazah, sertifikat, piagam</div>
+            </div>
+            <div style="text-align: center; padding: 12px; background: rgba(148,163,184,0.07); border: 1px solid rgba(148,163,184,0.15); border-radius: 8px;">
+                <i class="bi bi-folder" style="color: var(--c-text-muted); font-size: 1.3rem;"></i>
+                <div style="font-size: 0.78rem; font-weight: 600; color: var(--c-text-muted); margin-top: 6px;">Lainnya</div>
+                <div style="font-size: 0.72rem; color: var(--c-text-dim); margin-top: 2px;">Dokumen lain-lain</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // File upload display
+    const fileInput = document.getElementById('{{ form.file.id_for_label }}');
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            const nameEl = document.getElementById('fileName');
+            if (this.files && this.files[0]) {
+                nameEl.textContent = '✓ ' + this.files[0].name;
+                nameEl.style.display = 'block';
+                document.getElementById('dropZone').style.borderColor = 'var(--c-success)';
+            } else {
+                nameEl.style.display = 'none';
+                document.getElementById('dropZone').style.borderColor = 'var(--c-border)';
+            }
+        });
+    }
+
+    // Submit button loading state
+    document.getElementById('dokumenForm').addEventListener('submit', function() {
+        const btn = document.getElementById('submitBtn');
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Menyimpan...';
+        btn.style.opacity = '0.8';
+        btn.disabled = true;
+    });
+
+    // Add dark styling to Django-generated form widgets
+    document.querySelectorAll('input[type="text"], input[type="date"], select').forEach(function(el) {
+        el.addEventListener('focus', function() {
+            this.style.borderColor = 'var(--c-accent)';
+            this.style.boxShadow = '0 0 0 3px var(--c-accent-glow)';
+        });
+        el.addEventListener('blur', function() {
+            this.style.borderColor = 'var(--c-border)';
+            this.style.boxShadow = 'none';
+        });
+    });
+</script>
+{% endblock %}

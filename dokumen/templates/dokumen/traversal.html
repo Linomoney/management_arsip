@@ -1,0 +1,637 @@
+{% extends "dokumen/base.html" %}
+{% block title %}{{ judul }} — ArsipKu{% endblock %}
+{% block breadcrumb %}Traversal BST{% endblock %}
+{% block nav_inorder %}{% if mode == 'inorder' %}active{% endif %}{% endblock %}
+{% block nav_preorder %}{% if mode == 'preorder' %}active{% endif %}{% endblock %}
+{% block nav_postorder %}{% if mode == 'postorder' %}active{% endif %}{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ---- TAB SWITCHER ---- */
+.traversal-tabs {
+    display: flex;
+    gap: 6px;
+    background: var(--c-surface-2);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    padding: 6px;
+    flex-wrap: wrap;
+}
+.t-tab {
+    flex: 1;
+    min-width: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 8px;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    color: var(--c-text-muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all var(--transition);
+    border: 1px solid transparent;
+}
+.t-tab:hover {
+    background: var(--c-surface);
+    color: var(--c-text);
+}
+.t-tab.active {
+    background: var(--c-surface);
+    border-color: var(--c-accent);
+    color: var(--c-accent-2);
+}
+.t-tab .t-order {
+    font-size: 0.68rem;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+.t-tab.active .t-order { background: rgba(108,99,255,0.15); color: var(--c-accent-2); }
+.t-tab:not(.active) .t-order { background: var(--c-surface-2); color: var(--c-text-dim); }
+.t-tab .t-name { font-size: 0.9rem; font-weight: 600; }
+.t-tab .t-desc { font-size: 0.7rem; color: var(--c-text-dim); margin-top: 2px; text-align: center; }
+
+/* ---- STATS ROW ---- */
+.traversal-stats {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.t-stat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--c-surface-2);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-sm);
+    padding: 10px 16px;
+}
+.t-stat .t-stat-val {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--c-text);
+    font-family: var(--font-mono);
+    line-height: 1;
+}
+.t-stat .t-stat-label {
+    font-size: 0.72rem;
+    color: var(--c-text-muted);
+}
+
+/* ---- EXPLANATION BOX ---- */
+.explain-card {
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 20px;
+}
+
+/* ---- ANIMATED SEQUENCE ---- */
+.sequence-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 16px;
+    background: var(--c-surface-2);
+    border-radius: var(--radius-sm);
+    min-height: 48px;
+    align-items: center;
+}
+.seq-node {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    opacity: 0;
+    animation: nodeAppear 0.3s ease forwards;
+}
+.seq-badge {
+    background: rgba(108,99,255,0.15);
+    border: 1px solid rgba(108,99,255,0.3);
+    color: var(--c-accent-2);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: default;
+    transition: all var(--transition);
+}
+.seq-badge:hover {
+    background: rgba(108,99,255,0.25);
+    border-color: var(--c-accent);
+    transform: translateY(-2px);
+}
+.seq-badge.highlighted {
+    background: rgba(16,185,129,0.2);
+    border-color: rgba(16,185,129,0.5);
+    color: var(--c-success);
+}
+.seq-arrow {
+    color: var(--c-text-dim);
+    font-size: 0.85rem;
+}
+@keyframes nodeAppear {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- BST TREE VISUAL ---- */
+.tree-visual-wrap {
+    overflow-x: auto;
+    background: var(--c-surface-2);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+}
+
+/* ---- TABLE ---- */
+.traversal-table-wrap {
+    overflow-x: auto;
+}
+.traversal-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.875rem;
+}
+.traversal-table thead th {
+    background: var(--c-surface-2);
+    color: var(--c-text-muted);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--c-border);
+}
+.traversal-table tbody tr { transition: background var(--transition); }
+.traversal-table tbody tr:hover td { background: var(--c-surface-2); }
+.traversal-table tbody td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--c-border);
+    color: var(--c-text);
+    vertical-align: middle;
+}
+.traversal-table tbody tr:last-child td { border-bottom: none; }
+
+/* Step counter */
+.step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    font-size: 0.72rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    background: var(--c-surface-2);
+    color: var(--c-text-dim);
+    border: 1px solid var(--c-border);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+    <h1>
+        <i class="bi bi-diagram-3" style="color: var(--c-accent); margin-right: 10px;"></i>
+        Traversal Binary Search Tree
+    </h1>
+    <p>Telusuri semua dokumen dalam struktur BST menggunakan tiga metode traversal yang berbeda — masing-masing menghasilkan urutan berbeda.</p>
+</div>
+
+<!-- TAB SWITCHER -->
+<div class="traversal-tabs" style="margin-bottom: 24px;">
+    <a href="{% url 'dokumen:traversal' 'inorder' %}" class="t-tab {% if mode == 'inorder' %}active{% endif %}">
+        <span class="t-order">Kiri → Root → Kanan</span>
+        <span class="t-name"><i class="bi bi-sort-alpha-down" style="margin-right: 4px;"></i>In-Order</span>
+        <span class="t-desc">Hasil terurut alfabetis / numerik</span>
+    </a>
+    <a href="{% url 'dokumen:traversal' 'preorder' %}" class="t-tab {% if mode == 'preorder' %}active{% endif %}">
+        <span class="t-order">Root → Kiri → Kanan</span>
+        <span class="t-name"><i class="bi bi-diagram-3" style="margin-right: 4px;"></i>Pre-Order</span>
+        <span class="t-desc">Root dikunjungi pertama kali</span>
+    </a>
+    <a href="{% url 'dokumen:traversal' 'postorder' %}" class="t-tab {% if mode == 'postorder' %}active{% endif %}">
+        <span class="t-order">Kiri → Kanan → Root</span>
+        <span class="t-name"><i class="bi bi-diagram-3-fill" style="margin-right: 4px;"></i>Post-Order</span>
+        <span class="t-desc">Root dikunjungi paling akhir</span>
+    </a>
+</div>
+
+<!-- STATS ROW -->
+<div class="traversal-stats" style="margin-bottom: 24px;">
+    <div class="t-stat">
+        <div style="width: 36px; height: 36px; background: rgba(108,99,255,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--c-accent-2);"><i class="bi bi-files"></i></div>
+        <div>
+            <div class="t-stat-val">{{ jumlah_dokumen }}</div>
+            <div class="t-stat-label">Total Dokumen</div>
+        </div>
+    </div>
+    <div class="t-stat">
+        <div style="width: 36px; height: 36px; background: rgba(16,185,129,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--c-success);"><i class="bi bi-layers"></i></div>
+        <div>
+            <div class="t-stat-val">{{ tinggi_tree }}</div>
+            <div class="t-stat-label">Tinggi Tree</div>
+        </div>
+    </div>
+    <div class="t-stat">
+        <div style="width: 36px; height: 36px; background: rgba(56,189,248,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--c-info);"><i class="bi bi-lightning-charge"></i></div>
+        <div>
+            <div class="t-stat-val" style="font-size: 1rem;">O(n)</div>
+            <div class="t-stat-label">Kompleksitas Traversal</div>
+        </div>
+    </div>
+    <div class="t-stat">
+        <div style="width: 36px; height: 36px; background: rgba(245,158,11,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--c-warning);"><i class="bi bi-activity"></i></div>
+        <div>
+            <div class="t-stat-val" style="font-size: 0.9rem; color: var(--c-accent-2);">
+                {% if mode == 'inorder' %}L·R·Root{% elif mode == 'preorder' %}R·L·R{% else %}L·R·R{% endif %}
+            </div>
+            <div class="t-stat-label">Pola Kunjungan</div>
+        </div>
+    </div>
+</div>
+
+<!-- EXPLANATION CARD -->
+<div class="explain-card" style="margin-bottom: 20px;">
+    <div class="section-title" style="margin-bottom: 14px;">
+        <i class="bi bi-lightbulb" style="color: var(--c-warning);"></i>
+        {% if mode == 'inorder' %}
+        In-Order Traversal — Kiri → Root → Kanan
+        {% elif mode == 'preorder' %}
+        Pre-Order Traversal — Root → Kiri → Kanan
+        {% else %}
+        Post-Order Traversal — Kiri → Kanan → Root
+        {% endif %}
+    </div>
+
+    {% if mode == 'inorder' %}
+    <p style="font-size: 0.85rem; color: var(--c-text-muted); line-height: 1.8; margin: 0 0 14px;">
+        <strong style="color: var(--c-text);">In-Order</strong> mengunjungi node dengan urutan: <strong>Kiri dulu</strong>, lalu <strong>Root</strong>, lalu <strong>Kanan</strong>.
+        Karena BST menyimpan kode lebih kecil di kiri, hasil In-Order <em>selalu terurut naik</em> — inilah mengapa dashboard utama menggunakan traversal ini.
+    </p>
+    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px 14px; background: rgba(108,99,255,0.06); border: 1px solid rgba(108,99,255,0.2); border-radius: var(--radius-sm);">
+        <span style="font-size: 0.75rem; font-weight: 600; color: var(--c-text-muted); letter-spacing: 0.06em; text-transform: uppercase;">Pola:</span>
+        <span style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--c-info);">f(kiri)</span>
+        <span style="color: var(--c-text-dim);">→</span>
+        <span style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--c-accent-2);">kunjungi(root)</span>
+        <span style="color: var(--c-text-dim);">→</span>
+        <span style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--c-info);">f(kanan)</span>
+        <span style="margin-left: auto; font-size: 0.72rem; padding: 3px 10px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: var(--c-success); border-radius: 20px;">✓ Hasil Terurut</span>
+    </div>
+    {% elif mode == 'preorder' %}
+    <p style="font-size: 0.85rem; color: var(--c-text-muted); line-height: 1.8; margin: 0 0 14px;">
+        <strong style="color: var(--c-text);">Pre-Order</strong> mengunjungi <strong>Root terlebih dahulu</strong>, baru subtree Kiri, lalu Kanan.
+        Traversal ini berguna untuk <em>menyalin/merekonstruksi struktur BST</em>, karena root selalu diproses sebelum anak-anaknya.
+    </p>
+    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px 14px; background: rgba(108,99,255,0.06); border: 1px solid rgba(108,99,255,0.2); border-radius: var(--radius-sm);">
+        <span style="font-size: 0.75rem; font-weight: 600; color: var(--c-text-muted); letter-spacing: 0.06em; text-transform: uppercase;">Pola:</span>
+        <span style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--c-accent-2);">kunjungi(root)</span>
+        <span style="color: var(--c-text-dim);">→</span>
+        <span style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--c-info);">f(kiri)</span>
+        <span style="color: var(--c-text-dim);">→</span>
+        <span style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--c-info);">f(kanan)</span>
+        <span style="margin-left: auto; font-size: 0.72rem; padding: 3px 10px; background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.3); color: var(--c-info); border-radius: 20px;">Root → Anak</span>
+    </div>
+    {% else %}
+    <p style="font-size: 0.85rem; color: var(--c-text-muted); line-height: 1.8; margin: 0 0 14px;">
+        <strong style="color: var(--c-text);">Post-Order</strong> mengunjungi semua anak dulu, baru <strong>Root paling akhir</strong>.
+        Traversal ini berguna untuk <em>menghapus seluruh tree secara aman</em> — anak dihapus sebelum induknya.
+    </p>
+    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px 14px; background: rgba(108,99,255,0.06); border: 1px solid rgba(108,99,255,0.2); border-radius: var(--radius-sm);">
+        <span style="font-size: 0.75rem; font-weight: 600; color: var(--c-text-muted); letter-spacing: 0.06em; text-transform: uppercase;">Pola:</span>
+        <span style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--c-info);">f(kiri)</span>
+        <span style="color: var(--c-text-dim);">→</span>
+        <span style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--c-info);">f(kanan)</span>
+        <span style="color: var(--c-text-dim);">→</span>
+        <span style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--c-accent-2);">kunjungi(root)</span>
+        <span style="margin-left: auto; font-size: 0.72rem; padding: 3px 10px; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); color: var(--c-warning); border-radius: 20px;">Anak → Root</span>
+    </div>
+    {% endif %}
+</div>
+
+{% if data %}
+
+<!-- ANIMATED SEQUENCE VISUALIZER -->
+<div class="card-dark" style="margin-bottom: 20px; padding: 0; overflow: hidden;">
+    <div style="padding: 16px 20px 12px; border-bottom: 1px solid var(--c-border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <div class="section-title">
+            <i class="bi bi-play-circle" style="color: var(--c-accent);"></i>
+            Urutan Kunjungan Node
+            <span class="bst-chip"><span class="dot"></span>{{ data|length }} node</span>
+        </div>
+        <button id="replayBtn" class="btn-ghost" onclick="replayAnimation()" style="font-size: 0.78rem; padding: 6px 12px;">
+            <i class="bi bi-arrow-clockwise"></i> Putar Ulang
+        </button>
+    </div>
+
+    <div class="sequence-wrap" id="sequenceWrap">
+        {% for dok in data %}
+        <div class="seq-node" id="seq-{{ forloop.counter0 }}" style="animation-delay: {{ forloop.counter0 }}00ms;">
+            <span class="seq-badge" title="{{ dok.nama }}">{{ dok.kode }}</span>
+            {% if not forloop.last %}
+            <span class="seq-arrow"><i class="bi bi-arrow-right"></i></span>
+            {% else %}
+            <span style="font-size: 0.8rem; color: var(--c-success); margin-left: 2px;"><i class="bi bi-check-circle-fill"></i></span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <div style="padding: 10px 20px; border-top: 1px solid var(--c-border); font-size: 0.75rem; color: var(--c-text-dim);">
+        <i class="bi bi-cursor" style="margin-right: 4px;"></i> Hover pada badge kode untuk melihat nama dokumen
+    </div>
+</div>
+
+<!-- BST TREE VISUALIZATION (SVG) -->
+<div class="card-dark" style="margin-bottom: 20px; padding: 0; overflow: hidden;">
+    <div style="padding: 16px 20px 12px; border-bottom: 1px solid var(--c-border);">
+        <div class="section-title">
+            <i class="bi bi-diagram-3" style="color: var(--c-success);"></i>
+            Visualisasi Struktur BST
+            <span class="bst-chip"><span class="dot"></span>Tinggi: {{ tinggi_tree }}</span>
+        </div>
+        <p style="margin: 8px 0 0; font-size: 0.78rem; color: var(--c-text-muted);">
+            Representasi visual Binary Search Tree berdasarkan kode dokumen. Node <span style="color: var(--c-accent-2);">ungu</span> = root, warna lebih terang = level lebih dalam.
+        </p>
+    </div>
+    <div class="tree-visual-wrap">
+        <canvas id="bstCanvas" style="display: block; max-width: 100%;"></canvas>
+    </div>
+    <div style="padding: 10px 20px; border-top: 1px solid var(--c-border); display: flex; gap: 16px; flex-wrap: wrap;">
+        <span style="font-size: 0.72rem; color: var(--c-text-dim); display: flex; align-items: center; gap: 6px;">
+            <span style="width: 12px; height: 12px; border-radius: 50%; background: rgba(108,99,255,0.7); display: inline-block;"></span> Root / Node dalam
+        </span>
+        <span style="font-size: 0.72rem; color: var(--c-text-dim); display: flex; align-items: center; gap: 6px;">
+            <span style="width: 12px; height: 12px; border-radius: 50%; background: rgba(56,189,248,0.5); display: inline-block;"></span> Node menengah
+        </span>
+        <span style="font-size: 0.72rem; color: var(--c-text-dim); display: flex; align-items: center; gap: 6px;">
+            <span style="width: 12px; height: 12px; border-radius: 50%; background: rgba(16,185,129,0.5); display: inline-block;"></span> Leaf (tidak punya anak)
+        </span>
+        <span style="font-size: 0.72rem; color: var(--c-text-dim); display: flex; align-items: center; gap: 6px; margin-left: auto;">
+            <span style="color: var(--c-accent-2);" class="mono">{% if mode == 'inorder' %}←·Root·→{% elif mode == 'preorder' %}Root·←·→{% else %}←·→·Root{% endif %}</span> Mode saat ini
+        </span>
+    </div>
+</div>
+
+<!-- DETAIL TABLE -->
+<div class="card-dark" style="padding: 0; overflow: hidden;">
+    <div style="padding: 16px 20px 12px; border-bottom: 1px solid var(--c-border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <div class="section-title">
+            <i class="bi bi-table"></i>
+            Detail Urutan Traversal
+        </div>
+        <a href="{% url 'dokumen:index' %}" class="btn-ghost" style="font-size: 0.78rem; padding: 6px 12px;">
+            <i class="bi bi-house"></i> Beranda
+        </a>
+    </div>
+    <div class="traversal-table-wrap">
+        <table class="traversal-table">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">Urutan</th>
+                    <th>Kode</th>
+                    <th>Nama Dokumen</th>
+                    <th>Kategori</th>
+                    <th>Tanggal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dok in data %}
+                <tr>
+                    <td><span class="step-badge">{{ forloop.counter }}</span></td>
+                    <td><span class="badge-code">{{ dok.kode }}</span></td>
+                    <td style="font-weight: 500;">{{ dok.nama }}</td>
+                    <td>
+                        <span class="badge-cat {% if dok.kategori == 'Surat' %}surat{% elif dok.kategori == 'Laporan' %}laporan{% elif dok.kategori == 'Kontrak' %}kontrak{% elif dok.kategori == 'Sertifikat' %}sertifikat{% else %}lainnya{% endif %}">
+                            {{ dok.kategori }}
+                        </span>
+                    </td>
+                    <td style="color: var(--c-text-muted); font-family: var(--font-mono); font-size: 0.82rem;">{{ dok.tanggal }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div style="padding: 12px 20px; border-top: 1px solid var(--c-border); font-size: 0.78rem; color: var(--c-text-dim);">
+        <i class="bi bi-info-circle" style="margin-right: 4px; color: var(--c-accent);"></i>
+        Urutan di atas adalah hasil <span class="mono" style="color: var(--c-accent-2);">{{ mode }}</span> traversal BST — bukan urutan database biasa.
+        {% if mode == 'inorder' %}Hasilnya selalu terurut berdasarkan kode.{% endif %}
+    </div>
+</div>
+
+{% else %}
+<!-- EMPTY STATE -->
+<div class="card-dark" style="text-align: center; padding: 60px 28px;">
+    <div style="width: 70px; height: 70px; background: var(--c-surface-2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 20px; color: var(--c-text-dim);">
+        <i class="bi bi-diagram-3"></i>
+    </div>
+    <h3 style="font-size: 1.1rem; font-weight: 600; color: var(--c-text); margin: 0 0 8px;">BST Masih Kosong</h3>
+    <p style="font-size: 0.875rem; color: var(--c-text-muted); margin: 0 0 24px; max-width: 320px; margin-left: auto; margin-right: auto;">
+        Tidak ada dokumen untuk ditraversal. Tambahkan dokumen terlebih dahulu agar tree bisa divisualisasikan.
+    </p>
+    <a href="{% url 'dokumen:tambah' %}" class="btn-primary-custom">
+        <i class="bi bi-plus-lg"></i> Tambah Dokumen
+    </a>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// ============================================================
+// ANIMATED SEQUENCE
+// ============================================================
+function replayAnimation() {
+    const nodes = document.querySelectorAll('.seq-node');
+    nodes.forEach((n, i) => {
+        n.style.opacity = '0';
+        n.style.animation = 'none';
+        setTimeout(() => {
+            n.style.animation = `nodeAppear 0.3s ease ${i * 100}ms forwards`;
+        }, 50);
+    });
+}
+
+// ============================================================
+// BST CANVAS VISUALIZATION
+// ============================================================
+const traversalData = [
+    {% for dok in data %}"{{ dok.kode }}"{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+const currentMode = "{{ mode }}";
+
+// Rebuild BST from in-order data is complex; we'll use the actual order
+// Instead, build the BST from all data (using sorted approach)
+// Since we have inorder data always available from context, we build visually
+
+class VisualBST {
+    constructor() { this.root = null; }
+
+    insert(kode) {
+        this.root = this._ins(this.root, kode);
+    }
+
+    _ins(node, kode) {
+        if (!node) return { kode, left: null, right: null, x: 0, y: 0, depth: 0 };
+        if (kode < node.kode) node.left = this._ins(node.left, kode);
+        else if (kode > node.kode) node.right = this._ins(node.right, kode);
+        return node;
+    }
+
+    assignPositions(node, depth, minX, maxX) {
+        if (!node) return;
+        const midX = (minX + maxX) / 2;
+        node.x = midX;
+        node.y = depth;
+        node.depth = depth;
+        node.isLeaf = !node.left && !node.right;
+        this.assignPositions(node.left, depth + 1, minX, midX);
+        this.assignPositions(node.right, depth + 1, midX, maxX);
+    }
+
+    getAllNodes(node, arr) {
+        if (!node) return;
+        arr.push(node);
+        this.getAllNodes(node.left, arr);
+        this.getAllNodes(node.right, arr);
+        return arr;
+    }
+
+    getHeight(node) {
+        if (!node) return -1;
+        return 1 + Math.max(this.getHeight(node.left), this.getHeight(node.right));
+    }
+}
+
+function drawBST() {
+    const canvas = document.getElementById('bstCanvas');
+    if (!canvas || traversalData.length === 0) return;
+
+    // Build BST in insertion order (we use sorted order to approximate original insertion)
+    // We'll insert in inorder to create a balanced-ish visualization
+    const bst = new VisualBST();
+    // Insert in a shuffled order to make it more tree-like visually
+    // We'll do a BFS-order insertion from sorted data
+    function bfsInsert(arr) {
+        if (!arr.length) return;
+        const sorted = [...arr].sort();
+        function mid(lo, hi) {
+            if (lo > hi) return;
+            const m = Math.floor((lo + hi) / 2);
+            bst.insert(sorted[m]);
+            mid(lo, m - 1);
+            mid(m + 1, hi);
+        }
+        mid(0, sorted.length - 1);
+    }
+    bfsInsert(traversalData);
+
+    const treeHeight = bst.getHeight(bst.root);
+    const levels = treeHeight + 1;
+    const nodeR = Math.max(18, Math.min(26, 200 / (traversalData.length || 1)));
+    const levelH = Math.max(60, nodeR * 2.8);
+    const canvasW = Math.max(500, (traversalData.length + 1) * nodeR * 2.4);
+    const canvasH = levels * levelH + nodeR * 2 + 20;
+
+    canvas.width = canvasW;
+    canvas.height = canvasH;
+    canvas.style.width = '100%';
+    canvas.style.height = 'auto';
+
+    bst.assignPositions(bst.root, 0, 0, canvasW);
+
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvasW, canvasH);
+
+    const nodes = [];
+    bst.getAllNodes(bst.root, nodes);
+
+    // Determine which nodes are in the traversal sequence
+    const traversalSet = new Set(traversalData);
+
+    // Draw edges first
+    nodes.forEach(n => {
+        const px = n.x;
+        const py = n.y * levelH + nodeR + 10;
+        [n.left, n.right].forEach(child => {
+            if (!child) return;
+            const cx = child.x;
+            const cy = child.y * levelH + nodeR + 10;
+            ctx.beginPath();
+            ctx.moveTo(px, py);
+            ctx.lineTo(cx, cy);
+            ctx.strokeStyle = 'rgba(42,47,69,0.9)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        });
+    });
+
+    // Draw nodes
+    nodes.forEach(n => {
+        const px = n.x;
+        const py = n.y * levelH + nodeR + 10;
+        const depth = n.depth;
+        const maxD = Math.max(1, treeHeight);
+
+        // Color gradient by depth
+        let fillColor, strokeColor;
+        if (n.isLeaf) {
+            fillColor = 'rgba(16,185,129,0.18)';
+            strokeColor = 'rgba(16,185,129,0.5)';
+        } else if (depth === 0) {
+            fillColor = 'rgba(108,99,255,0.25)';
+            strokeColor = 'rgba(108,99,255,0.7)';
+        } else {
+            const t = depth / maxD;
+            fillColor = `rgba(56,189,248,${0.08 + 0.12 * (1-t)})`;
+            strokeColor = `rgba(56,189,248,${0.25 + 0.25 * (1-t)})`;
+        }
+
+        ctx.beginPath();
+        ctx.arc(px, py, nodeR, 0, Math.PI * 2);
+        ctx.fillStyle = fillColor;
+        ctx.fill();
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Text
+        ctx.fillStyle = n.isLeaf ? '#6ee7b7' : (depth === 0 ? '#a78bfa' : '#7dd3fc');
+        ctx.font = `${Math.max(9, Math.min(11, nodeR * 0.48))}px JetBrains Mono, monospace`;
+        ctx.fontWeight = '700';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Truncate long kode
+        let label = n.kode;
+        if (label.length > 6) label = label.substring(0, 6) + '…';
+        ctx.fillText(label, px, py);
+
+        // Depth indicator (small dot below)
+        if (depth === 0) {
+            ctx.fillStyle = 'rgba(108,99,255,0.6)';
+            ctx.beginPath();
+            ctx.arc(px, py - nodeR - 5, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    });
+}
+
+// Draw on load
+if (traversalData.length > 0) {
+    window.addEventListener('load', drawBST);
+    window.addEventListener('resize', drawBST);
+}
+</script>
+{% endblock %}
