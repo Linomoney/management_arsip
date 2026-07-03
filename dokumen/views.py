@@ -9,9 +9,11 @@ from .bst import BinarySearchTree
 def build_bst():
     """
     Membangun BST dari seluruh data dokumen yang ada di database.
+    Menggunakan order_by('id') agar data dimasukkan sesuai urutan input,
+    sehingga membentuk pohon BST yang seimbang (tidak skewed).
     """
     tree = BinarySearchTree()
-    for dok in Dokumen.objects.all():
+    for dok in Dokumen.objects.all().order_by("id"):
         tree.insert(dok.to_dict())
     return tree
 
@@ -195,10 +197,13 @@ def traversal_view(request, mode):
         judul = "In-Order Traversal (Terurut Berdasarkan Kode)"
         mode = "inorder"
 
+    tree_json = json.dumps(bst_to_json(tree.root))
+
     return render(request, "dokumen/traversal.html", {
         "data": data,
         "judul": judul,
         "mode": mode,
         "jumlah_dokumen": tree.count(),
         "tinggi_tree": tree.height(),
+        "tree_json": tree_json,
     })

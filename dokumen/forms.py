@@ -34,6 +34,6 @@ class CariDokumenForm(forms.Form):
         label="Kode Dokumen",
         widget=forms.TextInput(attrs={
             "class": "form-control",
-            "placeholder": "Masukkan kode dokumen, contoh: DOC001"
+            "placeholder": "Masukkan kode dokumen, contoh: DOC1"
         }),
     )

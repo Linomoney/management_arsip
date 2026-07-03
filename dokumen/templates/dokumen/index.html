@@ -164,14 +164,14 @@
         </div>
     </div>
 
-    <div class="stat-card" style="cursor:pointer;" onclick="window.location='{% url 'dokumen:tambah' %}'">
+    <a href="{% url 'dokumen:tambah' %}" class="stat-card" style="cursor:pointer; text-decoration: none;">
         <div class="stat-icon yellow"><i class="bi bi-plus-circle"></i></div>
         <div class="stat-info">
             <label>Aksi Cepat</label>
             <div class="stat-number" style="font-size: 1rem; color: var(--c-warning);">Tambah Dokumen</div>
             <div class="stat-sub">klik untuk menambahkan <i class="bi bi-arrow-right" style="font-size: 0.75rem;"></i></div>
         </div>
-    </div>
+    </a>
 </div>
 
 {% if not daftar_dokumen %}
@@ -390,6 +390,8 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script id="kategori-data-json" type="application/json">{{ kategori_count_json|safe }}</script>
+<script id="tree-data-json" type="application/json">{{ tree_json|safe }}</script>
 <script>
 // ============================================================
 // TABLE FILTER
@@ -414,7 +416,7 @@ function filterTable() {
 // ============================================================
 // CATEGORY CHART
 // ============================================================
-const kategoriData = {{ kategori_count_json|safe }};
+const kategoriData = JSON.parse(document.getElementById('kategori-data-json').textContent);
 const catColors = {
     'Surat':      { bar: '#38bdf8', bg: 'rgba(56,189,248,0.15)' },
     'Laporan':    { bar: '#a78bfa', bg: 'rgba(108,99,255,0.15)' },
@@ -454,7 +456,7 @@ function renderCatChart() {
 // ============================================================
 // BST MINI CANVAS
 // ============================================================
-const treeData = {{ tree_json|safe }};
+const treeData = JSON.parse(document.getElementById('tree-data-json').textContent);
 
 function drawMiniTree() {
     const canvas = document.getElementById('bstMiniCanvas');
@@ -481,16 +483,27 @@ function drawMiniTree() {
     canvas.width = canvasW;
     canvas.height = canvasH;
 
-    function assignPos(node, depth, minX, maxX) {
-        if (!node) return;
-        node.px = (minX + maxX) / 2;
-        node.py = depth * levelH + nodeR + 5;
-        node.depth = depth;
-        node.isLeaf = !node.left && !node.right;
-        assignPos(node.left, depth + 1, minX, (minX + maxX) / 2);
-        assignPos(node.right, depth + 1, (minX + maxX) / 2, maxX);
+    let inorderNodes = [];
+    function traverseInOrder(n, depth) {
+        if (!n) return;
+        traverseInOrder(n.left, depth + 1);
+        n.depth = depth;
+        n.isLeaf = !n.left && !n.right;
+        inorderNodes.push(n);
+        traverseInOrder(n.right, depth + 1);
     }
-    assignPos(treeData, 0, 0, canvasW);
+    traverseInOrder(treeData, 0);
+
+    const numNodes = inorderNodes.length;
+    const padding = nodeR + 10;
+    inorderNodes.forEach((node, index) => {
+        if (numNodes > 1) {
+            node.px = padding + index * (canvasW - 2 * padding) / (numNodes - 1);
+        } else {
+            node.px = canvasW / 2;
+        }
+        node.py = node.depth * levelH + nodeR + 8;
+    });
 
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvasW, canvasH);

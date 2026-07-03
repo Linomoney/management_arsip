@@ -334,7 +334,7 @@
 
     <div class="sequence-wrap" id="sequenceWrap">
         {% for dok in data %}
-        <div class="seq-node" id="seq-{{ forloop.counter0 }}" style="animation-delay: {{ forloop.counter0 }}00ms;">
+        <div class="seq-node" id="seq-{{ forloop.counter0 }}">
             <span class="seq-badge" title="{{ dok.nama }}">{{ dok.kode }}</span>
             {% if not forloop.last %}
             <span class="seq-arrow"><i class="bi bi-arrow-right"></i></span>
@@ -446,6 +446,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script id="tree-data-json" type="application/json">{{ tree_json|safe }}</script>
 <script>
 // ============================================================
 // ANIMATED SEQUENCE
@@ -464,84 +465,25 @@ function replayAnimation() {
 // ============================================================
 // BST CANVAS VISUALIZATION
 // ============================================================
-const traversalData = [
-    {% for dok in data %}"{{ dok.kode }}"{% if not forloop.last %},{% endif %}
-    {% endfor %}
-];
-
+const treeData = JSON.parse(document.getElementById('tree-data-json').textContent);
 const currentMode = "{{ mode }}";
-
-// Rebuild BST from in-order data is complex; we'll use the actual order
-// Instead, build the BST from all data (using sorted approach)
-// Since we have inorder data always available from context, we build visually
-
-class VisualBST {
-    constructor() { this.root = null; }
-
-    insert(kode) {
-        this.root = this._ins(this.root, kode);
-    }
-
-    _ins(node, kode) {
-        if (!node) return { kode, left: null, right: null, x: 0, y: 0, depth: 0 };
-        if (kode < node.kode) node.left = this._ins(node.left, kode);
-        else if (kode > node.kode) node.right = this._ins(node.right, kode);
-        return node;
-    }
-
-    assignPositions(node, depth, minX, maxX) {
-        if (!node) return;
-        const midX = (minX + maxX) / 2;
-        node.x = midX;
-        node.y = depth;
-        node.depth = depth;
-        node.isLeaf = !node.left && !node.right;
-        this.assignPositions(node.left, depth + 1, minX, midX);
-        this.assignPositions(node.right, depth + 1, midX, maxX);
-    }
-
-    getAllNodes(node, arr) {
-        if (!node) return;
-        arr.push(node);
-        this.getAllNodes(node.left, arr);
-        this.getAllNodes(node.right, arr);
-        return arr;
-    }
-
-    getHeight(node) {
-        if (!node) return -1;
-        return 1 + Math.max(this.getHeight(node.left), this.getHeight(node.right));
-    }
-}
 
 function drawBST() {
     const canvas = document.getElementById('bstCanvas');
-    if (!canvas || traversalData.length === 0) return;
+    if (!canvas || !treeData) return;
 
-    // Build BST in insertion order (we use sorted order to approximate original insertion)
-    // We'll insert in inorder to create a balanced-ish visualization
-    const bst = new VisualBST();
-    // Insert in a shuffled order to make it more tree-like visually
-    // We'll do a BFS-order insertion from sorted data
-    function bfsInsert(arr) {
-        if (!arr.length) return;
-        const sorted = [...arr].sort();
-        function mid(lo, hi) {
-            if (lo > hi) return;
-            const m = Math.floor((lo + hi) / 2);
-            bst.insert(sorted[m]);
-            mid(lo, m - 1);
-            mid(m + 1, hi);
-        }
-        mid(0, sorted.length - 1);
-    }
-    bfsInsert(traversalData);
+    // Count nodes and get height
+    function countNodes(n) { return n ? 1 + countNodes(n.left) + countNodes(n.right) : 0; }
+    function getHeight(n) { return n ? 1 + Math.max(getHeight(n.left), getHeight(n.right)) : -1; }
 
-    const treeHeight = bst.getHeight(bst.root);
+    const totalNodes = countNodes(treeData);
+    if (totalNodes === 0) return;
+
+    const treeHeight = getHeight(treeData);
     const levels = treeHeight + 1;
-    const nodeR = Math.max(18, Math.min(26, 200 / (traversalData.length || 1)));
+    const nodeR = Math.max(18, Math.min(26, 200 / (totalNodes || 1)));
     const levelH = Math.max(60, nodeR * 2.8);
-    const canvasW = Math.max(500, (traversalData.length + 1) * nodeR * 2.4);
+    const canvasW = Math.max(500, (totalNodes + 1) * nodeR * 2.4);
     const canvasH = levels * levelH + nodeR * 2 + 20;
 
     canvas.width = canvasW;
@@ -549,44 +491,56 @@ function drawBST() {
     canvas.style.width = '100%';
     canvas.style.height = 'auto';
 
-    bst.assignPositions(bst.root, 0, 0, canvasW);
+    let inorderNodes = [];
+    function traverseInOrder(n, depth) {
+        if (!n) return;
+        traverseInOrder(n.left, depth + 1);
+        n.depth = depth;
+        n.isLeaf = !n.left && !n.right;
+        inorderNodes.push(n);
+        traverseInOrder(n.right, depth + 1);
+    }
+    traverseInOrder(treeData, 0);
+
+    const numNodes = inorderNodes.length;
+    const padding = nodeR + 10;
+    inorderNodes.forEach((node, index) => {
+        if (numNodes > 1) {
+            node.px = padding + index * (canvasW - 2 * padding) / (numNodes - 1);
+        } else {
+            node.px = canvasW / 2;
+        }
+        node.py = node.depth * levelH + nodeR + 10;
+    });
 
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvasW, canvasH);
 
-    const nodes = [];
-    bst.getAllNodes(bst.root, nodes);
-
-    // Determine which nodes are in the traversal sequence
-    const traversalSet = new Set(traversalData);
-
     // Draw edges first
-    nodes.forEach(n => {
-        const px = n.x;
-        const py = n.y * levelH + nodeR + 10;
-        [n.left, n.right].forEach(child => {
+    function drawEdges(node) {
+        if (!node) return;
+        [node.left, node.right].forEach(child => {
             if (!child) return;
-            const cx = child.x;
-            const cy = child.y * levelH + nodeR + 10;
             ctx.beginPath();
-            ctx.moveTo(px, py);
-            ctx.lineTo(cx, cy);
+            ctx.moveTo(node.px, node.py);
+            ctx.lineTo(child.px, child.py);
             ctx.strokeStyle = 'rgba(42,47,69,0.9)';
             ctx.lineWidth = 1.5;
             ctx.stroke();
+            drawEdges(child);
         });
-    });
+    }
+    drawEdges(treeData);
 
     // Draw nodes
-    nodes.forEach(n => {
-        const px = n.x;
-        const py = n.y * levelH + nodeR + 10;
-        const depth = n.depth;
+    function drawNodes(node) {
+        if (!node) return;
+        const depth = node.depth;
         const maxD = Math.max(1, treeHeight);
 
         // Color gradient by depth
         let fillColor, strokeColor;
-        if (n.isLeaf) {
+        if (node.isLeaf) {
             fillColor = 'rgba(16,185,129,0.18)';
             strokeColor = 'rgba(16,185,129,0.5)';
         } else if (depth === 0) {
@@ -599,7 +553,7 @@ function drawBST() {
         }
 
         ctx.beginPath();
-        ctx.arc(px, py, nodeR, 0, Math.PI * 2);
+        ctx.arc(node.px, node.py, nodeR, 0, Math.PI * 2);
         ctx.fillStyle = fillColor;
         ctx.fill();
         ctx.strokeStyle = strokeColor;
@@ -607,30 +561,37 @@ function drawBST() {
         ctx.stroke();
 
         // Text
-        ctx.fillStyle = n.isLeaf ? '#6ee7b7' : (depth === 0 ? '#a78bfa' : '#7dd3fc');
+        ctx.fillStyle = node.isLeaf ? '#6ee7b7' : (depth === 0 ? '#a78bfa' : '#7dd3fc');
         ctx.font = `${Math.max(9, Math.min(11, nodeR * 0.48))}px JetBrains Mono, monospace`;
         ctx.fontWeight = '700';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
         // Truncate long kode
-        let label = n.kode;
+        let label = node.kode;
         if (label.length > 6) label = label.substring(0, 6) + '…';
-        ctx.fillText(label, px, py);
+        ctx.fillText(label, node.px, node.py);
 
         // Depth indicator (small dot below)
         if (depth === 0) {
             ctx.fillStyle = 'rgba(108,99,255,0.6)';
             ctx.beginPath();
-            ctx.arc(px, py - nodeR - 5, 3, 0, Math.PI * 2);
+            ctx.arc(node.px, node.py - nodeR - 5, 3, 0, Math.PI * 2);
             ctx.fill();
         }
-    });
+
+        drawNodes(node.left);
+        drawNodes(node.right);
+    }
+    drawNodes(treeData);
 }
 
-// Draw on load
-if (traversalData.length > 0) {
-    window.addEventListener('load', drawBST);
+// Draw and animate on load
+if (treeData) {
+    window.addEventListener('load', () => {
+        drawBST();
+        replayAnimation();
+    });
     window.addEventListener('resize', drawBST);
 }
 </script>

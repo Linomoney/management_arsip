@@ -25,18 +25,18 @@ data_dummy = [
     # (kode, nama, kategori, tanggal_upload)
     # Kode sengaja TIDAK urut — ini penting untuk menunjukkan BST bekerja!
     # BST akan menyusun ulang secara otomatis.
-    ("DOC-002", "Surat Keputusan Pengangkatan Karyawan Baru",     "Surat",      "2024-01-15"),
-    ("DOC-007", "Laporan Keuangan Triwulan Q1 2024",              "Laporan",    "2024-03-31"),
-    ("DOC-004", "Kontrak Kerja Sama PT Maju Jaya",                "Kontrak",    "2024-02-10"),
-    ("DOC-001", "Surat Undangan Rapat Koordinasi Bulanan",        "Surat",      "2024-01-05"),
-    ("DOC-010", "Sertifikat ISO 9001:2015 Perusahaan",            "Sertifikat", "2023-12-20"),
-    ("DOC-005", "Laporan Evaluasi Kinerja Semester I",            "Laporan",    "2024-06-30"),
-    ("DOC-003", "Surat Pemberitahuan Perubahan Jadwal",           "Surat",      "2024-01-20"),
-    ("DOC-009", "Kontrak Sewa Gedung Kantor 2024",                "Kontrak",    "2024-01-01"),
-    ("DOC-006", "Sertifikat Penghargaan Pelayanan Terbaik",       "Sertifikat", "2024-04-17"),
-    ("DOC-008", "Laporan Audit Internal Semester II",             "Laporan",    "2024-07-15"),
-    ("DOC-012", "Surat Izin Operasional Cabang Baru",             "Surat",      "2024-08-01"),
-    ("DOC-011", "Nota Kesepahaman MOU Bidang Teknologi",          "Kontrak",    "2024-05-22"),
+    ("DOC2", "Surat Keputusan Pengangkatan Karyawan Baru",     "Surat",      "2024-01-15"),
+    ("DOC7", "Laporan Keuangan Triwulan Q1 2024",              "Laporan",    "2024-03-31"),
+    ("DOC4", "Kontrak Kerja Sama PT Maju Jaya",                "Kontrak",    "2024-02-10"),
+    ("DOC1", "Surat Undangan Rapat Koordinasi Bulanan",        "Surat",      "2024-01-05"),
+    ("DOC10", "Sertifikat ISO 9001:2015 Perusahaan",            "Sertifikat", "2023-12-20"),
+    ("DOC5", "Laporan Evaluasi Kinerja Semester I",            "Laporan",    "2024-06-30"),
+    ("DOC3", "Surat Pemberitahuan Perubahan Jadwal",           "Surat",      "2024-01-20"),
+    ("DOC9", "Kontrak Sewa Gedung Kantor 2024",                "Kontrak",    "2024-01-01"),
+    ("DOC6", "Sertifikat Penghargaan Pelayanan Terbaik",       "Sertifikat", "2024-04-17"),
+    ("DOC8", "Laporan Audit Internal Semester II",             "Laporan",    "2024-07-15"),
+    ("DOC12", "Surat Izin Operasional Cabang Baru",             "Surat",      "2024-08-01"),
+    ("DOC11", "Nota Kesepahaman MOU Bidang Teknologi",          "Kontrak",    "2024-05-22"),
 ]
 
 print("📂 Menambahkan data dummy...")
